@@ -61,11 +61,14 @@ db_push_command:
     gzip -dc db.sql.gz | upsun db:sql --project="${UPSUN_PROJECT}" --environment="${UPSUN_ENVIRONMENT}"
 
 # push is a dangerous command. If not absolutely needed it's better to delete these lines.
-# TODO: This is a naive, Drupal-centric push, which needs adjustment for the mount to be pushed.
 files_push_command:
   command: |
     # set -x   # You can enable bash debugging output by uncommenting
     set -eu -o pipefail
     export UPSUN_CLI_NO_INTERACTION=1
     ls "${DDEV_FILES_DIR}" >/dev/null # This just refreshes stale NFS if possible
-    upsun mount:upload --yes --quiet --project="${UPSUN_PROJECT}" --environment="${UPSUN_ENVIRONMENT}" --source="${DDEV_FILES_DIR}" --mount=web/sites/default/files
+    for DIR in $(upsun mount:list --paths) ; do
+      >&2 echo "Uploading mount: $DIR"
+      upsun mount:upload --yes --quiet --project="${UPSUN_PROJECT}" --environment="${UPSUN_ENVIRONMENT}" --source="${DIR}" --mount=${DIR}
+    done;
+
